@@ -85,6 +85,14 @@ export class Agent {
   }
 
   async *chatStream(message: string): AsyncGenerator<StreamChunk> {
+    const subagentNames = Object.keys(this.subagentDefinitions);
+    
+    const systemContext = subagentNames.length > 0 
+      ? `[You are running on model: ${this.config.model}. Loaded subagents: ${subagentNames.join(', ')}]\n\n`
+      : '';
+
+    const enrichedMessage = `${systemContext}${message}`;
+
     const options: any = {
       settingSources: ["user", "project"],
       allowedTools: ["Task", "Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
@@ -96,7 +104,7 @@ export class Agent {
       includePartialMessages: true,
     };
 
-    console.log(`[Agent.chatStream] Available subagents:`, Object.keys(this.subagentDefinitions));
+    console.log(`[Agent.chatStream] Model: ${this.config.model}, Subagents:`, subagentNames);
 
     let buffer = '';
     let totalDuration = 0;
