@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useStdout } from 'ink';
 import { ChatHistory, Message } from './ChatHistory.js';
+import { ScrollableChatHistory } from './ScrollableChatHistory.js';
 import { InputField } from './InputField.js';
 import { AgentManager } from '@agent/core';
 
@@ -186,7 +187,7 @@ export const App: React.FC<AppProps> = ({ agentManager }) => {
 
       {/* Chat History - Scrollable */}
       <Box height={chatHeight} flexDirection="column">
-        <ChatHistory messages={displayMessages} />
+        <ScrollableChatHistory messages={displayMessages} maxHeight={chatHeight - 2} />
       </Box>
 
       {/* Input Field - Fixed */}
