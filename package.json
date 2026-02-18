@@ -6,9 +6,9 @@
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "pnpm --filter @agent/core dev",
-    "build": "pnpm --filter @agent/core build",
-    "start": "pnpm --filter @agent/core start"
+    "dev": "pnpm --filter @agent/repl dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter @agent/repl start"
   },
   "keywords": [
     "claude",

@@ -14,8 +14,14 @@ agent/
 │       ├── coder/         # 코딩 전문 Skill
 │       └── reviewer/      # 코드 리뷰 전문 Skill
 ├── packages/
-│   └── core/              # Agent SDK 백엔드
-│       ├── src/index.ts   # CLI 진입점
+│   ├── core/              # Agent SDK 래퍼 (비즈니스 로직)
+│   │   ├── src/
+│   │   │   ├── agent.ts   # Agent 클래스
+│   │   │   ├── types.ts   # 타입 정의
+│   │   │   └── index.ts   # Export
+│   │   └── package.json
+│   └── repl/              # TUI/REPL (프레젠테이션)
+│       ├── src/index.ts   # REPL 진입점
 │       └── package.json
 └── pnpm-workspace.yaml
 ```
@@ -43,17 +49,16 @@ DEFAULT_MODEL=anthropic/claude-sonnet-4
 ## 실행
 
 ```bash
-# 개발 모드 (CLI)
+# REPL 모드 (대화형)
 pnpm dev
 
-# 커스텀 프롬프트로 실행
-pnpm dev "Analyze the authentication system"
+# REPL에서 사용 가능한 명령어:
+# /skills   - 사용 가능한 Skill 목록
+# /help     - 도움말
+# /exit     - 종료
 
 # 빌드
 pnpm build
-
-# 프로덕션 실행
-pnpm start
 ```
 
 ## Skills 사용법
@@ -96,17 +101,20 @@ DEFAULT_MODEL=anthropic/claude-haiku-4
 ## 예시
 
 ```bash
-# Skill 목록 확인
-pnpm dev "What skills are available?"
+# REPL 시작
+$ pnpm dev
 
-# 코드 분석 (researcher skill 자동 활성화)
-pnpm dev "Analyze the project structure"
+🤖 > /skills
+Available Skills:
+  researcher - Deep research and code analysis specialist
+  coder - Expert developer who writes clean code
+  reviewer - Code review specialist
 
-# 코드 작성 (coder skill 자동 활성화)
-pnpm dev "Create a user authentication module"
+🤖 > Analyze the project structure
 
-# 코드 리뷰 (reviewer skill 자동 활성화)
-pnpm dev "Review the code in src/auth.ts"
+# (Agent가 researcher skill을 사용하여 분석)
+
+🤖 > /exit
 ```
 
 ## 참고
