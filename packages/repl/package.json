@@ -4,12 +4,15 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/index.tsx",
     "build": "tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@agent/core": "workspace:*"
+    "@agent/core": "workspace:*",
+    "ink": "^6.7.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
