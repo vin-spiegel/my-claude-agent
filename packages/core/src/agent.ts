@@ -2,12 +2,15 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { config } from "dotenv";
 import path from "path";
 import { AgentConfig, ChatMessage, Skill, StreamChunk } from "./types.js";
+import { AgentLoader } from "./agent-loader.js";
 import fs from "fs/promises";
 
 config({ path: path.resolve(process.cwd(), "../../.env") });
 
 export class Agent {
   private config: AgentConfig;
+  private loader: AgentLoader;
+  private subagentDefinitions: Record<string, any> = {};
 
   constructor(config: AgentConfig = {}) {
     this.config = {
@@ -15,24 +18,42 @@ export class Agent {
       maxBudget: config.maxBudget || (process.env.MAX_BUDGET_USD ? parseFloat(process.env.MAX_BUDGET_USD) : 10.0),
       cwd: config.cwd || process.cwd(),
       skills: config.skills,
+      instructions: config.instructions,
     };
+    
+    this.loader = new AgentLoader(config.cwd);
+  }
+
+  async init(): Promise<void> {
+    const definitions = await this.loader.loadAll();
+    
+    console.log(`[Agent.init] Loaded ${definitions.length} subagent definitions`);
+    
+    for (const def of definitions) {
+      this.subagentDefinitions[def.name] = {
+        description: def.description,
+        prompt: def.instructions,
+        tools: def.capabilities || undefined,
+        model: def.model || 'inherit',
+      };
+      console.log(`[Agent.init] Registered subagent: ${def.name}`);
+    }
   }
 
   async *chat(message: string): AsyncGenerator<ChatMessage> {
-    const prompt = this.config.instructions 
-      ? `${this.config.instructions}\n\nUser: ${message}`
-      : message;
-
     const options: any = {
       settingSources: ["user", "project"],
-      allowedTools: ["Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      allowedTools: ["Task", "Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      agents: this.subagentDefinitions,
       cwd: this.config.cwd,
       model: this.config.model,
       maxBudgetUsd: this.config.maxBudget,
       permissionMode: "acceptEdits",
     };
 
-    for await (const msg of query({ prompt, options })) {
+    console.log(`[Agent.chat] Available subagents:`, Object.keys(this.subagentDefinitions));
+
+    for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'assistant') {
         yield {
           role: 'assistant',
@@ -56,13 +77,10 @@ export class Agent {
   }
 
   async *chatStream(message: string): AsyncGenerator<StreamChunk> {
-    const prompt = this.config.instructions 
-      ? `${this.config.instructions}\n\nUser: ${message}`
-      : message;
-
     const options: any = {
       settingSources: ["user", "project"],
-      allowedTools: ["Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      allowedTools: ["Task", "Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      agents: this.subagentDefinitions,
       cwd: this.config.cwd,
       model: this.config.model,
       maxBudgetUsd: this.config.maxBudget,
@@ -70,11 +88,13 @@ export class Agent {
       includePartialMessages: true,
     };
 
+    console.log(`[Agent.chatStream] Available subagents:`, Object.keys(this.subagentDefinitions));
+
     let buffer = '';
     let totalDuration = 0;
     let totalCost = 0;
 
-    for await (const msg of query({ prompt, options })) {
+    for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
         

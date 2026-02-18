@@ -1,21 +1,30 @@
 #!/usr/bin/env node
 import React from 'react';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { render } from 'ink';
 import { createAgentManager } from '@agent/core';
 import { App } from './components/App.js';
 
-const projectRoot = path.resolve(process.cwd(), '../..');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../../..');
 const agentManager = createAgentManager(projectRoot);
 
 await agentManager.init();
 
-console.log(`[DEBUG] Loaded ${agentManager.getAgentCount()} agents`);
+console.log(`[DEBUG] AgentManager loaded ${agentManager.getAgentCount()} agents from .claude/agents/`);
 console.log(`[DEBUG] Current agent: ${agentManager.getCurrentAgentId()}`);
-console.log(`[DEBUG] Available agents:`, agentManager.listAgents().map(a => a.id));
 
 if (agentManager.getAgentCount() === 0) {
+  console.log(`[DEBUG] No agents found, creating default 'main' agent`);
   await agentManager.createAgent('main', {});
+}
+
+const currentAgent = agentManager.getCurrentAgent();
+if (currentAgent) {
+  await currentAgent.init();
+  console.log(`[DEBUG] Agent initialized and ready for subagent delegation`);
 }
 
 const { waitUntilExit, clear } = render(<App agentManager={agentManager} />, {
