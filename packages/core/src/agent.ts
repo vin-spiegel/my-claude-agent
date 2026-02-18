@@ -102,35 +102,29 @@ export class Agent {
     for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
+        const parentToolId = (msg as any).parent_tool_use_id;
+        const prefix = parentToolId ? '  [subagent] ' : '';
         
-        if (event.type === 'content_block_start' && event.content_block?.type === 'thinking') {
-          const thinkingMarker = '\n💭 [Thinking...]\n';
-          buffer += thinkingMarker;
-          yield {
-            type: 'chunk',
-            content: thinkingMarker
-          };
-        } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-          const text = event.delta.text;
-          buffer += text;
-          yield {
-            type: 'chunk',
-            content: text
-          };
-        } else if (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta') {
-          const text = event.delta.thinking || '';
-          buffer += text;
-          yield {
-            type: 'chunk',
-            content: text
-          };
+        if (event.type === 'content_block_start') {
+          if (event.content_block?.type === 'thinking') {
+            const marker = `\n${prefix}💭 Thinking...\n`;
+            yield { type: 'chunk', content: marker };
+          } else if (event.content_block?.type === 'tool_use') {
+            const toolName = event.content_block.name;
+            const marker = `\n${prefix}🔧 Using ${toolName}...\n`;
+            yield { type: 'chunk', content: marker };
+          }
+        } else if (event.type === 'content_block_delta') {
+          if (event.delta?.type === 'text_delta') {
+            const text = event.delta.text;
+            buffer += text;
+            yield { type: 'chunk', content: text };
+          } else if (event.delta?.type === 'thinking_delta') {
+            const text = event.delta.thinking || '';
+            yield { type: 'chunk', content: `${prefix}${text}` };
+          }
         } else if (event.type === 'content_block_stop') {
-          const stopMarker = '\n';
-          buffer += stopMarker;
-          yield {
-            type: 'chunk',
-            content: stopMarker
-          };
+          yield { type: 'chunk', content: '\n' };
         }
       } else if (msg.type === 'assistant' && msg.message?.content) {
         const content = this.extractContent(msg);
