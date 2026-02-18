@@ -34,6 +34,48 @@ This returns commits in format: `hash|author_name|author_email|date|iso_timestam
 
 The `%ai` (ISO 8601 timestamp) is needed to extract the hour for AM/PM grouping.
 
+### 3. Collect Slack Messages (Optional)
+If SLACK_BOT_TOKEN environment variable is set, collect Slack messages:
+
+```bash
+# Get Unix timestamp for 7 days ago
+OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
+
+# Fetch messages from channel
+curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+  "https://slack.com/api/conversations.history?channel=C01234567&oldest=$OLDEST" \
+  | jq -r '.messages[] | "\(.ts)|\(.user)|\(.text)"'
+```
+
+**If SLACK_BOT_TOKEN is not set or API fails:**
+- Skip Slack section gracefully
+- Include note: "Slack 데이터: 연동 안 됨"
+- Continue with Git-only report
+
+**Slack Data Format:**
+- Extract user mentions, key discussions from messages
+- Group by day (same as Git commits)
+- Summarize in 1-2 bullets per day MAX
+- Focus on: decisions made, blockers discussed, important announcements
+- **Business language only**: "새 기능 배포 논의" not "API endpoint deployment discussion"
+
+**Slack Integration Example:**
+```bash
+# Check if token exists
+if [ -n "$SLACK_BOT_TOKEN" ]; then
+  OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
+  
+  # Get messages from main work channel (adjust channel ID)
+  curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+    "https://slack.com/api/conversations.history?channel=C01234567&oldest=$OLDEST" \
+    | jq -r '.messages[] | select(.user != null) | "\(.ts)|\(.user)|\(.text)"' \
+    > /tmp/slack_messages.txt
+  
+  # If successful, parse and include in report
+  # If fails, note "Slack 데이터 없음"
+fi
+```
+
 ### 2. Parse and Analyze
 - Group commits by date (요일별)
 - **IMPORTANT**: Parse the ISO timestamp (%ai field) to extract hour
@@ -77,6 +119,10 @@ Generate a report in this structure:
 - 사용자 인터페이스 개선
 - 테스트 환경 구성
 
+**💬 주요 커뮤니케이션** (Slack, optional)
+- #engineering: 새 기능 배포 논의
+- #general: 주간 회의 일정 조율
+
 ### 수요일, 2/19
 
 **오전 (00:00-11:59)**
@@ -85,6 +131,9 @@ Generate a report in this structure:
 **오후 (12:00-23:59)**
 - 자동화 시스템 개발
 - 보고서 생성 기능 추가
+
+**💬 주요 커뮤니케이션**
+- [Slack 데이터 없음]
 ```
 
 ## IMPORTANT Guidelines
