@@ -111,8 +111,13 @@ export class Agent {
             yield { type: 'chunk', content: marker };
           } else if (event.content_block?.type === 'tool_use') {
             const toolName = event.content_block.name;
-            const marker = `\n${prefix}🔧 Using ${toolName}...\n`;
-            yield { type: 'chunk', content: marker };
+            if (toolName === 'Task') {
+              const marker = `\n${prefix}🚀 Delegating to subagent...\n`;
+              yield { type: 'chunk', content: marker };
+            } else {
+              const marker = `\n${prefix}🔧 Using ${toolName}...\n`;
+              yield { type: 'chunk', content: marker };
+            }
           }
         } else if (event.type === 'content_block_delta') {
           if (event.delta?.type === 'text_delta') {
