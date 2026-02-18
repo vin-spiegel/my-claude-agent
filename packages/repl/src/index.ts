@@ -87,6 +87,9 @@ rl.on('line', async (input) => {
         
         if (chunk.metadata) {
           const meta: string[] = [];
+          if (chunk.metadata.model) {
+            meta.push(`🤖 ${chunk.metadata.model}`);
+          }
           if (chunk.metadata.duration_ms) {
             meta.push(`⏱  ${(chunk.metadata.duration_ms / 1000).toFixed(2)}s`);
           }
