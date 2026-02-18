@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useStdout } from 'ink';
+import wrapAnsi from 'wrap-ansi';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant' | 'system';
@@ -7,6 +8,10 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => {
+  const { stdout } = useStdout();
+  const terminalWidth = stdout?.columns || 80;
+  const contentWidth = terminalWidth - 4;
+
   const getColor = () => {
     switch (role) {
       case 'user':
@@ -33,12 +38,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => {
     }
   };
 
+  const wrappedContent = wrapAnsi(content, contentWidth, { hard: true, trim: false });
+
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text bold color={getColor()}>
         {getPrefix()} {role.toUpperCase()}
       </Text>
-      <Text>{content}</Text>
+      <Box flexDirection="column" paddingLeft={1}>
+        <Text>{wrappedContent}</Text>
+      </Box>
     </Box>
   );
 };
