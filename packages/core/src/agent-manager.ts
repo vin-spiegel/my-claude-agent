@@ -31,10 +31,12 @@ export class AgentManager extends EventEmitter {
   private agents: Map<string, ManagedAgent> = new Map();
   private currentAgentId: string | null = null;
   private loader: AgentLoader;
+  private baseDir: string;
 
   constructor(baseDir?: string) {
     super();
-    this.loader = new AgentLoader(baseDir);
+    this.baseDir = baseDir || process.cwd();
+    this.loader = new AgentLoader(this.baseDir);
   }
 
   async init(): Promise<void> {
@@ -47,6 +49,7 @@ export class AgentManager extends EventEmitter {
 
   async createAgentFromDefinition(definition: AgentDefinition): Promise<Agent> {
     const config = this.loader.toAgentConfig(definition);
+    config.cwd = this.baseDir;
     const agent = new Agent(config);
 
     const managed: ManagedAgent = {
@@ -72,6 +75,10 @@ export class AgentManager extends EventEmitter {
   async createAgent(id: string, config: AgentConfig = {}): Promise<Agent> {
     if (this.agents.has(id)) {
       throw new Error(`Agent with id '${id}' already exists`);
+    }
+
+    if (!config.cwd) {
+      config.cwd = this.baseDir;
     }
 
     const agent = new Agent(config);
