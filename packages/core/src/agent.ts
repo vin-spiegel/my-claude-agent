@@ -86,12 +86,6 @@ export class Agent {
 
   async *chatStream(message: string): AsyncGenerator<StreamChunk> {
     const subagentNames = Object.keys(this.subagentDefinitions);
-    
-    const systemContext = subagentNames.length > 0 
-      ? `[You are running on model: ${this.config.model}. Loaded subagents: ${subagentNames.join(', ')}]\n\n`
-      : '';
-
-    const enrichedMessage = `${systemContext}${message}`;
 
     const options: any = {
       settingSources: ["user", "project"],
@@ -110,7 +104,7 @@ export class Agent {
     let totalDuration = 0;
     let totalCost = 0;
 
-    for await (const msg of query({ prompt: enrichedMessage, options })) {
+    for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
         
@@ -135,6 +129,13 @@ export class Agent {
         const resultMsg = msg as any;
         totalDuration = resultMsg.duration_ms || 0;
         totalCost = resultMsg.total_cost_usd || 0;
+        
+        console.log('[Agent.chatStream] Result metadata:', {
+          model: resultMsg.model,
+          session_id: resultMsg.session_id,
+          duration_ms: resultMsg.duration_ms,
+          cost: resultMsg.total_cost_usd
+        });
       }
     }
 
