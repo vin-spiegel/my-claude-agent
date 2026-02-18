@@ -107,7 +107,7 @@ export class Agent {
         
         if (event.type === 'content_block_start') {
           if (event.content_block?.type === 'thinking') {
-            const marker = `\n${prefix}💭 Thinking...\n`;
+            const marker = `${prefix}💭 Thinking... `;
             yield { type: 'chunk', content: marker };
           } else if (event.content_block?.type === 'tool_use') {
             const toolName = event.content_block.name;
@@ -115,7 +115,7 @@ export class Agent {
               const marker = `\n${prefix}🚀 Delegating to subagent...\n`;
               yield { type: 'chunk', content: marker };
             } else {
-              const marker = `\n${prefix}🔧 Using ${toolName}...\n`;
+              const marker = `${prefix}🔧 Using ${toolName}... `;
               yield { type: 'chunk', content: marker };
             }
           }
@@ -125,11 +125,10 @@ export class Agent {
             buffer += text;
             yield { type: 'chunk', content: text };
           } else if (event.delta?.type === 'thinking_delta') {
-            const text = event.delta.thinking || '';
-            yield { type: 'chunk', content: `${prefix}${text}` };
           }
         } else if (event.type === 'content_block_stop') {
-          yield { type: 'chunk', content: '\n' };
+          const stopMarker = event.content_block?.type === 'thinking' || event.content_block?.type === 'tool_use' ? '\n' : '';
+          yield { type: 'chunk', content: stopMarker };
         }
       } else if (msg.type === 'assistant' && msg.message?.content) {
         const content = this.extractContent(msg);
