@@ -52,23 +52,37 @@ export class Agent {
   }
 
   async *chatStream(message: string): AsyncGenerator<StreamChunk> {
+    const options: any = {
+      settingSources: ["user", "project"],
+      allowedTools: ["Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      cwd: this.config.cwd,
+      model: this.config.model,
+      maxBudgetUsd: this.config.maxBudget,
+      permissionMode: "acceptEdits",
+    };
+
     let buffer = '';
     let totalDuration = 0;
     let totalCost = 0;
 
-    for await (const chatMsg of this.chat(message)) {
-      if (chatMsg.role === 'assistant') {
-        const content = chatMsg.content;
-        for (let i = 0; i < content.length; i++) {
-          buffer += content[i];
+    for await (const msg of query({ prompt: message, options: options })) {
+      if (msg.type === 'assistant' && msg.message?.content) {
+        const content = this.extractContent(msg);
+        
+        const words = content.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i] + (i < words.length - 1 ? ' ' : '');
+          buffer += word;
           yield {
             type: 'chunk',
-            content: content[i]
+            content: word
           };
+          await new Promise(resolve => setTimeout(resolve, 20));
         }
-      } else if (chatMsg.role === 'system' && chatMsg.metadata) {
-        totalDuration = chatMsg.metadata.duration_ms || 0;
-        totalCost = chatMsg.metadata.cost_usd || 0;
+      } else if (msg.type === 'result') {
+        const resultMsg = msg as any;
+        totalDuration = resultMsg.duration_ms || 0;
+        totalCost = resultMsg.total_cost_usd || 0;
       }
     }
 
