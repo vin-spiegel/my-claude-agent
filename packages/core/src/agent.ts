@@ -98,7 +98,7 @@ export class Agent {
       includePartialMessages: true,
     };
 
-    console.log(`[Agent.chatStream] Model: ${this.config.model}, Subagents:`, subagentNames);
+
 
     let buffer = '';
     let totalDuration = 0;
@@ -132,11 +132,7 @@ export class Agent {
         totalCost = resultMsg.total_cost_usd || 0;
         modelUsage = resultMsg.modelUsage || {};
         
-        console.log('[Agent.chatStream] Result metadata:', {
-          duration_ms: totalDuration,
-          cost_usd: totalCost,
-          modelUsage
-        });
+
       }
     }
 
