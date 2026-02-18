@@ -8,7 +8,10 @@
   "scripts": {
     "dev": "pnpm --filter @agent/repl dev",
     "build": "pnpm -r build",
-    "start": "pnpm --filter @agent/repl start"
+    "start": "pnpm --filter @agent/repl start",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "keywords": [
     "claude",
@@ -19,6 +22,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "@vitest/ui": "^4.0.18",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.18"
   }
 }

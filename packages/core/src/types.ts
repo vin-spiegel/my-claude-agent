@@ -15,6 +15,15 @@ export interface ChatMessage {
   };
 }
 
+export interface StreamChunk {
+  type: 'chunk' | 'complete';
+  content: string;
+  metadata?: {
+    duration_ms?: number;
+    cost_usd?: number;
+  };
+}
+
 export interface Skill {
   name: string;
   description: string;

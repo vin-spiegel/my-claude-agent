@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { config } from "dotenv";
 import path from "path";
-import { AgentConfig, ChatMessage, Skill } from "./types.js";
+import { AgentConfig, ChatMessage, Skill, StreamChunk } from "./types.js";
 import fs from "fs/promises";
 
 config({ path: path.resolve(process.cwd(), "../../.env") });
@@ -49,6 +49,37 @@ export class Agent {
         };
       }
     }
+  }
+
+  async *chatStream(message: string): AsyncGenerator<StreamChunk> {
+    let buffer = '';
+    let totalDuration = 0;
+    let totalCost = 0;
+
+    for await (const chatMsg of this.chat(message)) {
+      if (chatMsg.role === 'assistant') {
+        const content = chatMsg.content;
+        for (let i = 0; i < content.length; i++) {
+          buffer += content[i];
+          yield {
+            type: 'chunk',
+            content: content[i]
+          };
+        }
+      } else if (chatMsg.role === 'system' && chatMsg.metadata) {
+        totalDuration = chatMsg.metadata.duration_ms || 0;
+        totalCost = chatMsg.metadata.cost_usd || 0;
+      }
+    }
+
+    yield {
+      type: 'complete',
+      content: buffer,
+      metadata: {
+        duration_ms: totalDuration,
+        cost_usd: totalCost
+      }
+    };
   }
 
   async listSkills(): Promise<Skill[]> {
