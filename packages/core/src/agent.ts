@@ -103,12 +103,33 @@ export class Agent {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
         
-        if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+        if (event.type === 'content_block_start' && event.content_block?.type === 'thinking') {
+          const thinkingMarker = '\n💭 [Thinking...]\n';
+          buffer += thinkingMarker;
+          yield {
+            type: 'chunk',
+            content: thinkingMarker
+          };
+        } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
           const text = event.delta.text;
           buffer += text;
           yield {
             type: 'chunk',
             content: text
+          };
+        } else if (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta') {
+          const text = event.delta.thinking || '';
+          buffer += text;
+          yield {
+            type: 'chunk',
+            content: text
+          };
+        } else if (event.type === 'content_block_stop') {
+          const stopMarker = '\n';
+          buffer += stopMarker;
+          yield {
+            type: 'chunk',
+            content: stopMarker
           };
         }
       } else if (msg.type === 'assistant' && msg.message?.content) {
