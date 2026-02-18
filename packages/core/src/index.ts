@@ -1,2 +1,8 @@
 export { Agent, createAgent } from './agent.js';
+export { AgentManager, createAgentManager } from './agent-manager.js';
+export { SessionManager, createSessionManager } from './session-manager.js';
+export { AgentPool, createAgentPool } from './agent-pool.js';
 export type { AgentConfig, ChatMessage, Skill, AgentResponse, StreamChunk } from './types.js';
+export type { ManagedAgent } from './agent-manager.js';
+export type { Session } from './session-manager.js';
+export type { AgentPoolConfig } from './agent-pool.js';

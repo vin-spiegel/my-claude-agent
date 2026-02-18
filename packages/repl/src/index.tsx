@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import React from 'react';
 import { render } from 'ink';
-import { createAgent } from '@agent/core';
+import { createAgentManager } from '@agent/core';
 import { App } from './components/App.js';
 
-const agent = createAgent();
+const agentManager = createAgentManager();
 
-const { waitUntilExit, clear } = render(<App agent={agent} />, {
+await agentManager.createAgent('main', {});
+
+const { waitUntilExit, clear } = render(<App agentManager={agentManager} />, {
   exitOnCtrlC: true,
   patchConsole: false,
 });
@@ -14,4 +16,5 @@ const { waitUntilExit, clear } = render(<App agent={agent} />, {
 waitUntilExit().then(() => {
   clear();
   process.stdout.write('\x1Bc');
+  agentManager.destroyAll();
 });

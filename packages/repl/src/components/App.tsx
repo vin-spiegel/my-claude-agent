@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useStdout } from 'ink';
 import { ChatHistory, Message } from './ChatHistory.js';
 import { InputField } from './InputField.js';
-import { Agent } from '@agent/core';
+import { AgentManager } from '@agent/core';
 
 interface AppProps {
-  agent: Agent;
+  agentManager: AgentManager;
 }
 
-export const App: React.FC<AppProps> = ({ agent }) => {
+export const App: React.FC<AppProps> = ({ agentManager }) => {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -57,9 +57,13 @@ export const App: React.FC<AppProps> = ({ agent }) => {
     if (trimmed === '/skills') {
       setIsProcessing(true);
       try {
-        const skills = await agent.listSkills();
+        const currentAgent = agentManager.getCurrentAgent();
+        if (!currentAgent) {
+          throw new Error('No active agent');
+        }
+        const skills = await currentAgent.listSkills();
         const skillsText = skills.length > 0
-          ? 'Available Skills:\n' + skills.map(s => `  ${s.name} - ${s.description}`).join('\n')
+          ? 'Available Skills:\n' + skills.map((s: any) => `  ${s.name} - ${s.description}`).join('\n')
           : 'No skills configured.';
         const skillsMessage: Message = {
           id: `system-${Date.now()}`,
@@ -91,11 +95,15 @@ export const App: React.FC<AppProps> = ({ agent }) => {
     setCurrentAssistantMessage('');
 
     try {
-      // Stream assistant response
+      const currentAgent = agentManager.getCurrentAgent();
+      if (!currentAgent) {
+        throw new Error('No active agent');
+      }
+
       let buffer = '';
       const assistantMessageId = `assistant-${Date.now()}`;
 
-      for await (const chunk of agent.chatStream(input)) {
+      for await (const chunk of currentAgent.chatStream(input)) {
         if (chunk.type === 'chunk') {
           buffer += chunk.content;
           setCurrentAssistantMessage(buffer);
