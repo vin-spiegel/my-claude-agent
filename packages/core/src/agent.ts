@@ -27,8 +27,6 @@ export class Agent {
   async init(): Promise<void> {
     const definitions = await this.loader.loadAll();
     
-    console.log(`[Agent.init] Loaded ${definitions.length} subagent definitions`);
-    
     for (const def of definitions) {
       this.subagentDefinitions[def.name] = {
         description: def.description,
@@ -41,10 +39,6 @@ export class Agent {
         skills: def.skills,
         memory: def.memory,
       };
-      console.log(`[Agent.init] Registered subagent: ${def.name}`, {
-        tools: def.tools,
-        model: def.model
-      });
     }
   }
 

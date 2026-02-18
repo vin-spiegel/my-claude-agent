@@ -12,13 +12,7 @@ const agentManager = createAgentManager(projectRoot);
 
 await agentManager.init();
 
-console.log(`\n🤖 Claude Agent REPL v1.0.0`);
-if (agentManager.getAgentCount() > 0) {
-  const agents = agentManager.listAgents();
-  console.log(`\n📦 Loaded ${agents.length} subagents: ${agents.map(a => a.id).join(', ')}\n`);
-} else {
-  console.log();
-}
+console.log(`\n🤖 Claude Agent REPL v1.0.0\n`);
 
 if (agentManager.getAgentCount() === 0) {
   await agentManager.createAgent('main', {});
