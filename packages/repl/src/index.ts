@@ -37,9 +37,8 @@ rl.on('line', async (input) => {
   const trimmed = input.trim();
 
   if (trimmed === '/exit' || trimmed === '/quit') {
-    console.log('\n👋 Goodbye!\n');
     rl.close();
-    process.exit(0);
+    return;
   }
 
   if (trimmed === '/help') {
