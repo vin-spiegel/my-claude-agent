@@ -7,11 +7,8 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm --filter @agent/repl dev",
-    "build": "pnpm -r build",
-    "start": "pnpm --filter @agent/repl start",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "dev:ink": "pnpm --filter @agent/ink dev",
+    "build": "pnpm -r build"
   },
   "keywords": [
     "claude",
