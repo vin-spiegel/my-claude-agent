@@ -185,7 +185,7 @@ export const App: React.FC<AppProps> = ({ agentManager }) => {
       </Box>
 
       {/* Chat History - Scrollable */}
-      <Box height={chatHeight} flexDirection="column" justifyContent="flex-end" overflow="hidden">
+      <Box height={chatHeight} flexDirection="column">
         <ChatHistory messages={displayMessages} />
       </Box>
 
