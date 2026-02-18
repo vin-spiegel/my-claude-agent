@@ -110,7 +110,7 @@ export class Agent {
     let totalDuration = 0;
     let totalCost = 0;
 
-    for await (const msg of query({ prompt: message, options })) {
+    for await (const msg of query({ prompt: enrichedMessage, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
         
