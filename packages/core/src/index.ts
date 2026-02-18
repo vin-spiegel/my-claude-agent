@@ -1,8 +1,8 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { config } from "dotenv";
+import path from "path";
 
-// Load environment variables
-config();
+config({ path: path.resolve(process.cwd(), "../../.env") });
 
 async function main() {
   console.log("🤖 Starting Claude Local Agent with OpenRouter...\n");
