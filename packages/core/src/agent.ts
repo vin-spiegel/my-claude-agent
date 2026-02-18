@@ -203,8 +203,10 @@ export class Agent {
           .map((block: any) => {
             if (block.type === 'text') return block.text;
             if (block.text) return block.text;
-            return JSON.stringify(block);
+            if (block.type === 'tool_use') return '';
+            return '';
           })
+          .filter((text: string) => text.length > 0)
           .join('\n');
       }
       return String(msg.message.content);
