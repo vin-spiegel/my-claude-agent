@@ -93,8 +93,8 @@ rl.on('line', async (input) => {
           if (chunk.metadata.cost_usd) {
             meta.push(`💵 $${chunk.metadata.cost_usd.toFixed(4)}`);
           }
-          if (chunk.metadata.provider) {
-            meta.push(`🔌 ${chunk.metadata.provider}`);
+          if (chunk.metadata.provider && chunk.metadata.model) {
+            meta.push(`🔌 ${chunk.metadata.provider}/${chunk.metadata.model}`);
           }
           if (meta.length > 0) {
             console.log(`\x1b[90m${meta.join(' | ')}\x1b[0m\n`);

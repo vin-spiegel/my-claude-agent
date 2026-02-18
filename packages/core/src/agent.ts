@@ -131,12 +131,16 @@ export class Agent {
         const resultMsg = msg as any;
         totalDuration = resultMsg.duration_ms || 0;
         totalCost = resultMsg.total_cost_usd || 0;
-        actualModel = resultMsg.model || this.config.model || '';
-        provider = actualModel.split('/')[0] || '';
+        
+        actualModel = this.config.model || '';
+        const modelParts = actualModel.split('/');
+        provider = modelParts[0] || '';
+        const modelName = modelParts[1] || actualModel;
         
         console.log('[Agent.chatStream] Result metadata:', {
           provider,
-          model: actualModel,
+          model: modelName,
+          full_model: actualModel,
           session_id: resultMsg.session_id,
           duration_ms: resultMsg.duration_ms,
           cost: resultMsg.total_cost_usd
@@ -144,11 +148,14 @@ export class Agent {
       }
     }
 
+    const modelParts = actualModel.split('/');
+    const displayModel = modelParts[1] || actualModel;
+
     yield {
       type: 'complete',
       content: buffer,
       metadata: {
-        model: actualModel,
+        model: displayModel,
         provider,
         duration_ms: totalDuration,
         cost_usd: totalCost
