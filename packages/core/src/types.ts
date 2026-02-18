@@ -21,6 +21,7 @@ export interface StreamChunk {
   content: string;
   metadata?: {
     model?: string;
+    provider?: string;
     duration_ms?: number;
     cost_usd?: number;
   };

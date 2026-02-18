@@ -104,6 +104,7 @@ export class Agent {
     let totalDuration = 0;
     let totalCost = 0;
     let actualModel = '';
+    let provider = '';
 
     for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
@@ -131,8 +132,10 @@ export class Agent {
         totalDuration = resultMsg.duration_ms || 0;
         totalCost = resultMsg.total_cost_usd || 0;
         actualModel = resultMsg.model || this.config.model || '';
+        provider = actualModel.split('/')[0] || '';
         
         console.log('[Agent.chatStream] Result metadata:', {
+          provider,
           model: actualModel,
           session_id: resultMsg.session_id,
           duration_ms: resultMsg.duration_ms,
@@ -146,6 +149,7 @@ export class Agent {
       content: buffer,
       metadata: {
         model: actualModel,
+        provider,
         duration_ms: totalDuration,
         cost_usd: totalCost
       }

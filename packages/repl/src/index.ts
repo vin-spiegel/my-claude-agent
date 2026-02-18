@@ -87,14 +87,14 @@ rl.on('line', async (input) => {
         
         if (chunk.metadata) {
           const meta: string[] = [];
-          if (chunk.metadata.model) {
-            meta.push(`🤖 ${chunk.metadata.model}`);
-          }
           if (chunk.metadata.duration_ms) {
             meta.push(`⏱  ${(chunk.metadata.duration_ms / 1000).toFixed(2)}s`);
           }
           if (chunk.metadata.cost_usd) {
             meta.push(`💵 $${chunk.metadata.cost_usd.toFixed(4)}`);
+          }
+          if (chunk.metadata.provider) {
+            meta.push(`🔌 ${chunk.metadata.provider}`);
           }
           if (meta.length > 0) {
             console.log(`\x1b[90m${meta.join(' | ')}\x1b[0m\n`);
