@@ -46,12 +46,8 @@ Generate a report in this structure:
 # 주간 업무 보고서
 **기간**: [시작일] ~ [종료일]
 
----
-
-## 이번 주 주요 성과
+## 주요 성과
 [비개발자가 이해할 수 있는 1-2줄 요약. 기술 용어 최소화]
-
----
 
 ## 일별 작업
 
@@ -70,10 +66,6 @@ Generate a report in this structure:
 
 **오후**
 - 보고서 생성 기능 추가
-
----
-
-*총 [X]개 작업 완료*
 ```
 
 ## IMPORTANT Guidelines
@@ -97,15 +89,18 @@ Generate a report in this structure:
    - Combine 3-5 related commits into one line
    - Focus on OUTCOMES, not technical details
 
-4. **Keep it SHORT**:
-   - Each day: 2-4 bullet points MAX
-   - Each bullet: 1 line
-   - Total report: fits in one screen
+4. **Keep it VERY SHORT**:
+   - Each day: 2-3 bullet points MAX
+   - Each bullet: ONE SHORT LINE
+   - Total report: 10-15 lines maximum
+   - NO statistics section
+   - NO footer text
 
 5. **Business language**:
    - Focus on what was delivered, not how
    - Use impact-oriented language
-   - Avoid code/file names unless critical
+   - Avoid code/file names, commit hashes
+   - "기능 추가", "문제 해결", "개선 작업" 같은 일반적 표현
 
 ## Guidelines
 
