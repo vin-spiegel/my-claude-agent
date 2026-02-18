@@ -23,18 +23,22 @@ The `%ai` (ISO 8601 timestamp) is needed to extract the hour for AM/PM grouping.
 
 ### 2. Parse and Analyze
 - Group commits by date (요일별)
-- Within each day, split by time:
-  - 오전: 00:00 - 12:00
-  - 오후: 12:00 - 24:00
-- Extract commit time from date field
-- Count total commits
+- **IMPORTANT**: Parse the ISO timestamp (%ai field) to extract hour
+- Split each day into:
+  - **오전 (00:00-11:59)**: hour < 12
+  - **오후 (12:00-23:59)**: hour >= 12
+- If a time period has no commits, write "[커밋 없음]"
 
-### 3. Time-based Grouping
-Parse the time from `%ad` (date field) and categorize:
-- If hour < 12: 오전 (morning)
-- If hour >= 12: 오후 (afternoon)
+### 3. Time-based Grouping EXAMPLE
+```
+Commit: abc1234|John|john@ex.com|2026-02-18|2026-02-18 09:30:00 +0900|Add feature
+         ↓ Parse timestamp: 09:30 → hour = 9 → 오전
 
-Group commits under each day's morning/afternoon sections.
+Commit: def5678|John|john@ex.com|2026-02-18|2026-02-18 14:30:00 +0900|Fix bug
+         ↓ Parse timestamp: 14:30 → hour = 14 → 오후
+```
+
+You MUST parse the hour from the ISO timestamp to correctly categorize AM/PM.
 
 ## Report Format (Markdown)
 
@@ -52,19 +56,21 @@ Generate a report in this structure:
 ## 일별 작업
 
 ### 화요일, 2/18
-**오전**
-- 프로젝트 초기 구축
-- API 연동 작업
 
-**오후**
-- 테스트 환경 구성
+**오전 (00:00-11:59)**
+- 프로젝트 초기 구축
+
+**오후 (12:00-23:59)**
 - 사용자 인터페이스 개선
+- 테스트 환경 구성
 
 ### 수요일, 2/19
-**오전**
-- 자동화 시스템 개발
 
-**오후**
+**오전 (00:00-11:59)**
+- [커밋 없음]
+
+**오후 (12:00-23:59)**
+- 자동화 시스템 개발
 - 보고서 생성 기능 추가
 ```
 
