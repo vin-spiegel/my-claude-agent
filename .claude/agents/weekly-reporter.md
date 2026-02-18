@@ -1,6 +1,6 @@
 ---
 name: weekly-reporter
-description: Weekly work report generator. Analyzes Git commit history from the past 7 days and creates a comprehensive work summary. Use when you need to generate weekly reports or review what was accomplished.
+description: SUBAGENT for generating weekly work reports. Analyzes Git commit history from the past 7 days and creates a comprehensive Markdown summary. Invoke this when user asks to generate/create weekly report, work summary, or review what was accomplished this week.
 tools: Bash, Read, Grep
 model: sonnet
 ---
