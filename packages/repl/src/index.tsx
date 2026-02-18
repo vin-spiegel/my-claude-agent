@@ -6,7 +6,11 @@ import { App } from './components/App.js';
 
 const agentManager = createAgentManager();
 
-await agentManager.createAgent('main', {});
+await agentManager.init();
+
+if (agentManager.getAgentCount() === 0) {
+  await agentManager.createAgent('main', {});
+}
 
 const { waitUntilExit, clear } = render(<App agentManager={agentManager} />, {
   exitOnCtrlC: true,

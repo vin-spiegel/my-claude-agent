@@ -1,11 +1,13 @@
 import { EventEmitter } from 'events';
 import { Agent } from './agent.js';
 import { AgentConfig } from './types.js';
+import { AgentLoader, AgentDefinition } from './agent-loader.js';
 
 export interface ManagedAgent {
   id: string;
   agent: Agent;
   config: AgentConfig;
+  definition?: AgentDefinition;
   createdAt: Date;
   lastUsed: Date;
 }
@@ -28,10 +30,45 @@ export interface AgentManagerEvents {
 export class AgentManager extends EventEmitter {
   private agents: Map<string, ManagedAgent> = new Map();
   private currentAgentId: string | null = null;
+  private loader: AgentLoader;
 
-  /**
-   * Create a new agent with the given configuration
-   */
+  constructor(baseDir?: string) {
+    super();
+    this.loader = new AgentLoader(baseDir);
+  }
+
+  async init(): Promise<void> {
+    const definitions = await this.loader.loadAll();
+    
+    for (const def of definitions) {
+      await this.createAgentFromDefinition(def);
+    }
+  }
+
+  async createAgentFromDefinition(definition: AgentDefinition): Promise<Agent> {
+    const config = this.loader.toAgentConfig(definition);
+    const agent = new Agent(config);
+
+    const managed: ManagedAgent = {
+      id: definition.name,
+      agent,
+      config,
+      definition,
+      createdAt: new Date(),
+      lastUsed: new Date(),
+    };
+
+    this.agents.set(definition.name, managed);
+    this.emit('agent:created', { id: definition.name, config });
+
+    if (!this.currentAgentId) {
+      this.currentAgentId = definition.name;
+      this.emit('agent:switched', { id: definition.name });
+    }
+
+    return agent;
+  }
+
   async createAgent(id: string, config: AgentConfig = {}): Promise<Agent> {
     if (this.agents.has(id)) {
       throw new Error(`Agent with id '${id}' already exists`);
@@ -42,6 +79,7 @@ export class AgentManager extends EventEmitter {
       id,
       agent,
       config,
+      definition: undefined,
       createdAt: new Date(),
       lastUsed: new Date(),
     };
@@ -49,7 +87,6 @@ export class AgentManager extends EventEmitter {
     this.agents.set(id, managed);
     this.emit('agent:created', { id, config });
 
-    // Auto-switch to first agent
     if (!this.currentAgentId) {
       this.currentAgentId = id;
       this.emit('agent:switched', { id });
@@ -159,6 +196,6 @@ export class AgentManager extends EventEmitter {
   }
 }
 
-export function createAgentManager(): AgentManager {
-  return new AgentManager();
+export function createAgentManager(baseDir?: string): AgentManager {
+  return new AgentManager(baseDir);
 }
