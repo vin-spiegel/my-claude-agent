@@ -102,12 +102,20 @@ export const App: React.FC<AppProps> = ({ agentManager }) => {
 
       let buffer = '';
       const assistantMessageId = `assistant-${Date.now()}`;
+      let lastUpdateTime = 0;
+      const UPDATE_INTERVAL = 100;
 
       for await (const chunk of currentAgent.chatStream(input)) {
         if (chunk.type === 'chunk') {
           buffer += chunk.content;
-          setCurrentAssistantMessage(buffer);
+          
+          const now = Date.now();
+          if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+            setCurrentAssistantMessage(buffer);
+            lastUpdateTime = now;
+          }
         } else if (chunk.type === 'complete') {
+          setCurrentAssistantMessage(buffer);
           // Add final message to history
           const assistantMessage: Message = {
             id: assistantMessageId,
