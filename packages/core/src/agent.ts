@@ -106,8 +106,7 @@ export class Agent {
         const isSubagent = !!parentToolId;
         const prefix = isSubagent ? '  → ' : '';
         
-        console.error(`[DEBUG] Event: ${event.type}, parent: ${parentToolId ? 'YES' : 'NO'}, content_block: ${event.content_block?.type || 'N/A'}`);
-        
+
         if (event.type === 'content_block_start') {
           if (event.content_block?.type === 'thinking') {
             const marker = isSubagent ? `${prefix}💭 ` : `💭 `;
