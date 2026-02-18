@@ -1,0 +1,24 @@
+{
+  "name": "claude-local-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local agent built with Claude Agent SDK and OpenRouter",
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter @agent/core dev",
+    "build": "pnpm --filter @agent/core build",
+    "start": "pnpm --filter @agent/core start"
+  },
+  "keywords": [
+    "claude",
+    "agent",
+    "openrouter",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
