@@ -5,13 +5,14 @@ import { AgentConfig } from './types.js';
 
 export interface AgentDefinition {
   name: string;
-  type?: string;
-  color?: string;
   description: string;
-  capabilities?: string[];
+  tools?: string[];
+  disallowedTools?: string[];
   model?: string;
-  maxBudget?: number;
+  permissionMode?: string;
+  maxTurns?: number;
   skills?: string[];
+  memory?: string;
   instructions: string;
   filePath: string;
 }
@@ -58,7 +59,6 @@ export class AgentLoader {
   toAgentConfig(definition: AgentDefinition): AgentConfig {
     return {
       model: definition.model,
-      maxBudget: definition.maxBudget,
       skills: definition.skills,
       instructions: definition.instructions,
     };
@@ -78,13 +78,14 @@ export class AgentLoader {
 
     return {
       name: frontmatter.name,
-      type: frontmatter.type,
-      color: frontmatter.color,
       description: frontmatter.description,
-      capabilities: frontmatter.capabilities,
+      tools: frontmatter.tools,
+      disallowedTools: frontmatter.disallowedTools,
       model: frontmatter.model,
-      maxBudget: frontmatter.maxBudget,
+      permissionMode: frontmatter.permissionMode,
+      maxTurns: frontmatter.maxTurns,
       skills: frontmatter.skills,
+      memory: frontmatter.memory,
       instructions,
       filePath,
     };

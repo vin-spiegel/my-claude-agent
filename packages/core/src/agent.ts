@@ -33,10 +33,18 @@ export class Agent {
       this.subagentDefinitions[def.name] = {
         description: def.description,
         prompt: def.instructions,
-        tools: def.capabilities || undefined,
+        tools: def.tools,
+        disallowedTools: def.disallowedTools,
         model: def.model || 'inherit',
+        permissionMode: def.permissionMode,
+        maxTurns: def.maxTurns,
+        skills: def.skills,
+        memory: def.memory,
       };
-      console.log(`[Agent.init] Registered subagent: ${def.name}`);
+      console.log(`[Agent.init] Registered subagent: ${def.name}`, {
+        tools: def.tools,
+        model: def.model
+      });
     }
   }
 

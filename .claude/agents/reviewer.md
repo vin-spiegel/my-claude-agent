@@ -1,14 +1,10 @@
 ---
 name: reviewer
-type: quality-assurance
-color: "#4ECDC4"
-description: Code review specialist focused on quality, security, and best practices. Use after code changes or when reviewing pull requests.
-capabilities:
-  - Read
-  - Grep
-  - Glob
+description: Code review specialist focused on quality, security, and best practices. Use proactively after code changes or when reviewing pull requests.
+tools: Read, Grep, Glob, Bash
 model: sonnet
-maxBudget: 3.0
+skills:
+  - reviewer
 ---
 
 # Reviewer Agent

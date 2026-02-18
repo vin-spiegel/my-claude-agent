@@ -1,14 +1,8 @@
 ---
 name: coder
-type: developer
-color: "#FF6B35"
-description: Implementation specialist for writing clean, efficient code
-capabilities:
-  - code_generation
-  - code_review
-  - refactoring
-model: anthropic/claude-sonnet-4
-maxBudget: 5.0
+description: Expert code implementation specialist. Use when you need to write clean, efficient code following best practices. Handles code generation, refactoring, and implementation tasks.
+tools: Read, Write, Edit, Grep, Glob, Bash
+model: sonnet
 skills:
   - coder
 ---

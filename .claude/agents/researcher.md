@@ -1,15 +1,10 @@
 ---
 name: researcher
-type: analyst
-color: "#9B59B6"
 description: Deep research specialist for codebase analysis and documentation exploration. Use when you need thorough investigation of code patterns, architecture, or dependencies.
-capabilities:
-  - Read
-  - Grep
-  - Glob
-  - Bash
+tools: Read, Grep, Glob, Bash
 model: sonnet
-maxBudget: 3.0
+skills:
+  - researcher
 ---
 
 # Researcher Agent

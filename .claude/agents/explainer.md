@@ -1,14 +1,8 @@
 ---
 name: explainer
-type: educator
-color: "#F39C12"
-description: Code explanation specialist. Use when you need to understand how code works or explain complex logic to others.
-capabilities:
-  - Read
-  - Grep
-  - Glob
+description: Code explanation specialist. Use when you need to understand how code works or explain complex logic to others. Great for learning and documentation.
+tools: Read, Grep, Glob
 model: haiku
-maxBudget: 1.0
 ---
 
 # Explainer Agent
