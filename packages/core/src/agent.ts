@@ -59,6 +59,7 @@ export class Agent {
       model: this.config.model,
       maxBudgetUsd: this.config.maxBudget,
       permissionMode: "acceptEdits",
+      includePartialMessages: true,
     };
 
     let buffer = '';
@@ -66,18 +67,25 @@ export class Agent {
     let totalCost = 0;
 
     for await (const msg of query({ prompt: message, options: options })) {
-      if (msg.type === 'assistant' && msg.message?.content) {
-        const content = this.extractContent(msg);
+      if (msg.type === 'stream_event') {
+        const event = (msg as any).event;
         
-        const words = content.split(' ');
-        for (let i = 0; i < words.length; i++) {
-          const word = words[i] + (i < words.length - 1 ? ' ' : '');
-          buffer += word;
+        if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+          const text = event.delta.text;
+          buffer += text;
           yield {
             type: 'chunk',
-            content: word
+            content: text
           };
-          await new Promise(resolve => setTimeout(resolve, 20));
+        }
+      } else if (msg.type === 'assistant' && msg.message?.content) {
+        const content = this.extractContent(msg);
+        if (!buffer) {
+          buffer = content;
+          yield {
+            type: 'chunk',
+            content: content
+          };
         }
       } else if (msg.type === 'result') {
         const resultMsg = msg as any;
