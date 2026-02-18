@@ -3,6 +3,7 @@ export interface AgentConfig {
   skills?: string[];
   maxBudget?: number;
   cwd?: string;
+  instructions?: string;
 }
 
 export interface ChatMessage {

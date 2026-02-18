@@ -60,6 +60,7 @@ export class AgentLoader {
       model: definition.model,
       maxBudget: definition.maxBudget,
       skills: definition.skills,
+      instructions: definition.instructions,
     };
   }
 

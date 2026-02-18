@@ -19,6 +19,10 @@ export class Agent {
   }
 
   async *chat(message: string): AsyncGenerator<ChatMessage> {
+    const prompt = this.config.instructions 
+      ? `${this.config.instructions}\n\nUser: ${message}`
+      : message;
+
     const options: any = {
       settingSources: ["user", "project"],
       allowedTools: ["Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
@@ -28,7 +32,7 @@ export class Agent {
       permissionMode: "acceptEdits",
     };
 
-    for await (const msg of query({ prompt: message, options: options })) {
+    for await (const msg of query({ prompt, options })) {
       if (msg.type === 'assistant') {
         yield {
           role: 'assistant',
@@ -52,6 +56,10 @@ export class Agent {
   }
 
   async *chatStream(message: string): AsyncGenerator<StreamChunk> {
+    const prompt = this.config.instructions 
+      ? `${this.config.instructions}\n\nUser: ${message}`
+      : message;
+
     const options: any = {
       settingSources: ["user", "project"],
       allowedTools: ["Skill", "Read", "Write", "Edit", "Bash", "Grep", "Glob"],
@@ -66,7 +74,7 @@ export class Agent {
     let totalDuration = 0;
     let totalCost = 0;
 
-    for await (const msg of query({ prompt: message, options: options })) {
+    for await (const msg of query({ prompt, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
         
