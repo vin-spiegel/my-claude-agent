@@ -20,10 +20,9 @@ export interface StreamChunk {
   type: 'chunk' | 'complete';
   content: string;
   metadata?: {
-    model?: string;
-    provider?: string;
     duration_ms?: number;
     cost_usd?: number;
+    modelUsage?: Record<string, any>;
   };
 }
 

@@ -103,8 +103,7 @@ export class Agent {
     let buffer = '';
     let totalDuration = 0;
     let totalCost = 0;
-    let actualModel = '';
-    let provider = '';
+    let modelUsage: any = {};
 
     for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
@@ -131,10 +130,13 @@ export class Agent {
         const resultMsg = msg as any;
         totalDuration = resultMsg.duration_ms || 0;
         totalCost = resultMsg.total_cost_usd || 0;
-        actualModel = resultMsg.model || '';
-        provider = resultMsg.provider || '';
+        modelUsage = resultMsg.modelUsage || {};
         
-        console.log('[Agent.chatStream] Raw result metadata:', resultMsg);
+        console.log('[Agent.chatStream] Result metadata:', {
+          duration_ms: totalDuration,
+          cost_usd: totalCost,
+          modelUsage
+        });
       }
     }
 
@@ -142,10 +144,9 @@ export class Agent {
       type: 'complete',
       content: buffer,
       metadata: {
-        model: actualModel,
-        provider,
         duration_ms: totalDuration,
-        cost_usd: totalCost
+        cost_usd: totalCost,
+        modelUsage
       }
     };
   }

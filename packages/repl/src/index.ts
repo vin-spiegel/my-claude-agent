@@ -93,12 +93,14 @@ rl.on('line', async (input) => {
           if (chunk.metadata.cost_usd) {
             meta.push(`💵 $${chunk.metadata.cost_usd.toFixed(4)}`);
           }
-          if (chunk.metadata.model) {
-            meta.push(`🤖 ${chunk.metadata.model}`);
+          
+          if (chunk.metadata.modelUsage) {
+            const models = Object.keys(chunk.metadata.modelUsage);
+            if (models.length > 0) {
+              meta.push(`🤖 ${models.join(', ')}`);
+            }
           }
-          if (chunk.metadata.provider) {
-            meta.push(`🔌 ${chunk.metadata.provider}`);
-          }
+          
           if (meta.length > 0) {
             console.log(`\x1b[90m${meta.join(' | ')}\x1b[0m\n`);
           }
