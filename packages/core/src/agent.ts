@@ -278,6 +278,13 @@ export class Agent {
       return `${status} Task done: ${desc}${output ? output + (task.output?.length > 150 ? '...' : '') : ''}`;
     }
 
+    // File Read result
+    if (obj.type === 'text' && obj.file?.filePath) {
+      const name = obj.file.filePath.split(/[/\\]/).pop() || obj.file.filePath;
+      const lines = obj.file.numLines || obj.file.totalLines || '?';
+      return `📄 ${name} (${lines} lines)`;
+    }
+
     // Bash/tool execution result with stdout
     if (obj.stdout !== undefined || obj.exitCode !== undefined) {
       const code = obj.exitCode ?? obj.exit_code ?? '?';
