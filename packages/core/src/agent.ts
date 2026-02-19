@@ -135,9 +135,8 @@ export class Agent {
             yield { type: 'chunk', content: text };
           }
         } else if (event.type === 'content_block_stop') {
-          if (event.content_block?.type === 'thinking' || event.content_block?.type === 'tool_use') {
-            yield { type: 'chunk', content: '\n' };
-          }
+          // Add newline after any content block ends to separate from next block
+          yield { type: 'chunk', content: '\n' };
         }
       } else if (msg.type === 'tool_progress') {
         // Show tool execution progress (elapsed time)
