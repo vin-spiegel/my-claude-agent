@@ -35,22 +35,47 @@ This returns commits in format: `hash|author_name|author_email|date|iso_timestam
 The `%ai` (ISO 8601 timestamp) is needed to extract the hour for AM/PM grouping.
 
 ### 3. Collect Slack Messages (Optional)
-If SLACK_BOT_TOKEN environment variable is set, collect Slack messages:
+If SLACK_BOT_TOKEN and SLACK_CHANNEL_IDS environment variables are set, collect Slack messages.
+
+SLACK_CHANNEL_IDS is a comma-separated list of channel IDs (e.g., `C0A237STLBG,C0XXXXXXXXX`).
 
 ```bash
-# Get Unix timestamp for 7 days ago
-OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
-
-# Fetch messages from channel
-curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-  "https://slack.com/api/conversations.history?channel=C01234567&oldest=$OLDEST" \
-  | jq -r '.messages[] | "\(.ts)|\(.user)|\(.text)"'
+# Check if token and channels exist
+if [ -n "$SLACK_BOT_TOKEN" ] && [ -n "$SLACK_CHANNEL_IDS" ]; then
+  OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
+  
+  # Loop through each channel
+  IFS=',' read -ra CHANNELS <<< "$SLACK_CHANNEL_IDS"
+  for CHANNEL in "${CHANNELS[@]}"; do
+    CHANNEL=$(echo "$CHANNEL" | tr -d ' ')
+    
+    # Get channel name for display
+    CHANNEL_NAME=$(curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+      "https://slack.com/api/conversations.info?channel=$CHANNEL" \
+      | jq -r '.channel.name // "unknown"')
+    
+    echo "=== #$CHANNEL_NAME ($CHANNEL) ==="
+    
+    # Fetch messages
+    curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+      "https://slack.com/api/conversations.history?channel=$CHANNEL&oldest=$OLDEST&limit=200" \
+      | jq -r '.messages[] | select(.user != null) | "\(.ts)|\(.user)|\(.text)"'
+  done
+fi
 ```
 
-**If SLACK_BOT_TOKEN is not set or API fails:**
+**If SLACK_BOT_TOKEN or SLACK_CHANNEL_IDS is not set or API fails:**
 - Skip Slack section gracefully
 - Include note: "Slack 데이터: 연동 안 됨"
 - Continue with Git-only report
+
+**Resolving user IDs to names:**
+When Slack messages contain user IDs (e.g., `U01234567`), resolve them:
+```bash
+curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+  "https://slack.com/api/users.info?user=U01234567" \
+  | jq -r '.user.real_name // .user.name'
+```
 
 **Slack Data Format:**
 - Extract user mentions, key discussions from messages
@@ -58,23 +83,6 @@ curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
 - Summarize in 1-2 bullets per day MAX
 - Focus on: decisions made, blockers discussed, important announcements
 - **Business language only**: "새 기능 배포 논의" not "API endpoint deployment discussion"
-
-**Slack Integration Example:**
-```bash
-# Check if token exists
-if [ -n "$SLACK_BOT_TOKEN" ]; then
-  OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
-  
-  # Get messages from main work channel (adjust channel ID)
-  curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-    "https://slack.com/api/conversations.history?channel=C01234567&oldest=$OLDEST" \
-    | jq -r '.messages[] | select(.user != null) | "\(.ts)|\(.user)|\(.text)"' \
-    > /tmp/slack_messages.txt
-  
-  # If successful, parse and include in report
-  # If fails, note "Slack 데이터 없음"
-fi
-```
 
 ### 2. Parse and Analyze
 - Group commits by date (요일별)
