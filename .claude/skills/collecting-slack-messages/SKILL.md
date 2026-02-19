@@ -9,12 +9,19 @@ Collects messages from configured Slack channels using the Bot API. Outputs clea
 
 ## Prerequisites
 
-Environment variables (set in `.env` at project root):
+Environment variables are loaded in this order (first found wins):
+
+1. **Process env** — project `.env` or shell environment
+2. **`~/.claude/.env`** — global fallback (works from any project)
+
+Required variables:
 
 - `SLACK_BOT_TOKEN` — Slack Bot User OAuth Token (`xoxb-...`)
 - `SLACK_CHANNEL_IDS` — Comma-separated channel IDs (e.g., `C0A237STLBG,C0BBBBBBBBB`)
 
-If either variable is missing, the script exits gracefully with a warning.
+**Recommended**: Set these in `~/.claude/.env` once, and they'll work from any project directory.
+
+If either variable is missing from all sources, the script exits gracefully with a warning.
 
 ## Usage
 

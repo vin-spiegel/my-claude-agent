@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
 /// <reference types="node" />
 import path from "path";
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync, existsSync } from "fs";
+import { homedir } from "os";
 /**
  * Slack Message Collector
  *
@@ -9,7 +10,10 @@ import { writeFileSync } from "fs";
  * Resolves user IDs to real names. Outputs clean, readable text
  * grouped by channel and date (KST timezone).
  *
- * Environment variables:
+ * Environment variables (checked in order):
+ *   1. Process env (from project .env or shell)
+ *   2. ~/.claude/.env (global fallback — works from any project)
+ *
  *   SLACK_BOT_TOKEN   - Slack Bot User OAuth Token (xoxb-...)
  *   SLACK_CHANNEL_IDS - Comma-separated channel IDs (e.g., C0A237STLBG,C0BBBBBBBBB)
  *
@@ -17,6 +21,33 @@ import { writeFileSync } from "fs";
  *   tsx collect.ts [days]     # default: 7 days
  *   tsx collect.ts 14         # last 14 days
  */
+
+// ── Global .env fallback ──
+
+function loadGlobalEnv(): void {
+  const globalEnvPath = path.join(homedir(), ".claude", ".env");
+  if (!existsSync(globalEnvPath)) return;
+
+  try {
+    const content = readFileSync(globalEnvPath, "utf-8");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      const value = trimmed.slice(eqIdx + 1).trim();
+      // Only set if not already defined (project .env takes priority)
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // Silent fail — global .env is optional
+  }
+}
+
+loadGlobalEnv();
 
 const SLACK_API = "https://slack.com/api";
 const KST_OFFSET_MS = 9 * 3600 * 1000;
