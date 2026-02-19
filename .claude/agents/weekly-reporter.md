@@ -35,54 +35,25 @@ This returns commits in format: `hash|author_name|author_email|date|iso_timestam
 The `%ai` (ISO 8601 timestamp) is needed to extract the hour for AM/PM grouping.
 
 ### 3. Collect Slack Messages (Optional)
-If SLACK_BOT_TOKEN and SLACK_CHANNEL_IDS environment variables are set, collect Slack messages.
-
-SLACK_CHANNEL_IDS is a comma-separated list of channel IDs (e.g., `C0A237STLBG,C0XXXXXXXXX`).
+Run the Slack collector script. It handles all Slack API interaction internally (auth, pagination, user resolution).
 
 ```bash
-# Check if token and channels exist
-if [ -n "$SLACK_BOT_TOKEN" ] && [ -n "$SLACK_CHANNEL_IDS" ]; then
-  OLDEST=$(date -v-7d +%s 2>/dev/null || date -d '7 days ago' +%s)
-  
-  # Loop through each channel
-  IFS=',' read -ra CHANNELS <<< "$SLACK_CHANNEL_IDS"
-  for CHANNEL in "${CHANNELS[@]}"; do
-    CHANNEL=$(echo "$CHANNEL" | tr -d ' ')
-    
-    # Get channel name for display
-    CHANNEL_NAME=$(curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-      "https://slack.com/api/conversations.info?channel=$CHANNEL" \
-      | jq -r '.channel.name // "unknown"')
-    
-    echo "=== #$CHANNEL_NAME ($CHANNEL) ==="
-    
-    # Fetch messages
-    curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-      "https://slack.com/api/conversations.history?channel=$CHANNEL&oldest=$OLDEST&limit=200" \
-      | jq -r '.messages[] | select(.user != null) | "\(.ts)|\(.user)|\(.text)"'
-  done
-fi
+tsx .claude/skills/collecting-slack-messages/scripts/collect.ts 7
 ```
 
-**If SLACK_BOT_TOKEN or SLACK_CHANNEL_IDS is not set or API fails:**
-- Skip Slack section gracefully
-- Include note: "Slack 데이터: 연동 안 됨"
-- Continue with Git-only report
+If credentials are missing, the script exits with a warning — continue with Git-only report.
 
-**Resolving user IDs to names:**
-When Slack messages contain user IDs (e.g., `U01234567`), resolve them:
-```bash
-curl -s -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-  "https://slack.com/api/users.info?user=U01234567" \
-  | jq -r '.user.real_name // .user.name'
-```
+**NEVER do any of the following:**
+- Do NOT run `curl` against Slack API directly
+- Do NOT access `$SLACK_BOT_TOKEN` in any Bash command
+- Do NOT echo, print, or log any environment variable containing tokens or keys
+- ALWAYS use the collector script above — it handles authentication securely
 
-**Slack Data Format:**
-- Extract user mentions, key discussions from messages
-- Group by day (same as Git commits)
+**Using Slack data in the report:**
 - Summarize in 1-2 bullets per day MAX
 - Focus on: decisions made, blockers discussed, important announcements
 - **Business language only**: "새 기능 배포 논의" not "API endpoint deployment discussion"
+- If no Slack data available, include note: "Slack 데이터: 연동 안 됨"
 
 ### 2. Parse and Analyze
 - Group commits by date (요일별)

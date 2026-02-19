@@ -99,6 +99,9 @@ export class Agent {
     let totalCost = 0;
     let modelUsage: any = {};
 
+    // Track active tool names by tool_use_id for result display
+    const activeTools = new Map<string, string>();
+
     for await (const msg of query({ prompt: message, options })) {
       if (msg.type === 'stream_event') {
         const event = (msg as any).event;
@@ -113,6 +116,10 @@ export class Agent {
             yield { type: 'chunk', content: marker };
           } else if (event.content_block?.type === 'tool_use') {
             const toolName = event.content_block.name;
+            const toolId = event.content_block.id;
+            if (toolId) {
+              activeTools.set(toolId, toolName);
+            }
             if (toolName === 'Task') {
               const marker = `\n🚀 Delegating to subagent...\n`;
               yield { type: 'chunk', content: marker };
@@ -130,6 +137,27 @@ export class Agent {
         } else if (event.type === 'content_block_stop') {
           if (event.content_block?.type === 'thinking' || event.content_block?.type === 'tool_use') {
             yield { type: 'chunk', content: '\n' };
+          }
+        }
+      } else if (msg.type === 'tool_progress') {
+        // Show tool execution progress (elapsed time)
+        const toolMsg = msg as any;
+        const toolName = toolMsg.tool_name || 'tool';
+        const elapsed = toolMsg.elapsed_time_seconds || 0;
+        const isSubagent = !!toolMsg.parent_tool_use_id;
+        const prefix = isSubagent ? '  → ' : '';
+        if (elapsed > 0 && elapsed % 5 === 0) {
+          yield { type: 'chunk', content: `${prefix}⏳ ${toolName} (${elapsed}s)\n` };
+        }
+      } else if (msg.type === 'user') {
+        // Tool results come as user messages with tool_use_result
+        const userMsg = msg as any;
+        if (userMsg.tool_use_result !== undefined) {
+          const isSubagent = !!userMsg.parent_tool_use_id;
+          const prefix = isSubagent ? '  → ' : '';
+          const result = this.formatToolResult(userMsg.tool_use_result);
+          if (result) {
+            yield { type: 'chunk', content: `${prefix}📋 ${result}\n` };
           }
         }
       } else if (msg.type === 'assistant' && msg.message?.content) {
@@ -191,6 +219,75 @@ export class Agent {
     } catch {
       return [];
     }
+  }
+
+  private formatToolResult(result: unknown): string {
+    if (result === undefined || result === null) return '';
+
+    let text = '';
+    if (typeof result === 'string') {
+      text = result;
+    } else if (typeof result === 'object') {
+      const obj = result as any;
+
+      // Try to format known JSON structures first
+      const formatted = this.formatKnownResult(obj);
+      if (formatted) return formatted;
+
+      // Handle MCP CallToolResult format: { content: [{ type: 'text', text: '...' }] }
+      if (Array.isArray(obj.content)) {
+        text = obj.content
+          .map((c: any) => c.text || '')
+          .filter((t: string) => t)
+          .join('\n');
+      } else {
+        text = JSON.stringify(result);
+      }
+    } else {
+      text = String(result);
+    }
+
+    if (!text) return '';
+
+    // Truncate long results for display (show first 300 chars)
+    const maxLen = 300;
+    const trimmed = text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+    // Collapse to single line for compact display
+    return trimmed.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  private formatKnownResult(obj: any): string | null {
+    // Skill invocation result
+    if (obj.success !== undefined && obj.commandName) {
+      return obj.success
+        ? `✅ Skill "${obj.commandName}" loaded`
+        : `❌ Skill "${obj.commandName}" failed`;
+    }
+
+    // Task async launch
+    if (obj.isAsync && obj.status === 'async_launched') {
+      const desc = obj.description || obj.agentId || 'task';
+      return `🚀 Task launched: ${desc}`;
+    }
+
+    // Task retrieval (completed/failed)
+    if (obj.retrieval_status && obj.task) {
+      const task = obj.task;
+      const status = task.status === 'completed' ? '✅' : '❌';
+      const desc = task.description || task.task_id || 'task';
+      const output = task.output ? ` → ${task.output.replace(/\n/g, ' ').slice(0, 150)}` : '';
+      return `${status} Task done: ${desc}${output ? output + (task.output?.length > 150 ? '...' : '') : ''}`;
+    }
+
+    // Bash/tool execution result with stdout
+    if (obj.stdout !== undefined || obj.exitCode !== undefined) {
+      const code = obj.exitCode ?? obj.exit_code ?? '?';
+      const icon = code === 0 ? '✅' : '⚠️';
+      const out = (obj.stdout || '').replace(/\n/g, ' ').slice(0, 150);
+      return `${icon} exit=${code}${out ? ': ' + out + (obj.stdout?.length > 150 ? '...' : '') : ''}`;
+    }
+
+    return null;
   }
 
   private extractContent(msg: any): string {
