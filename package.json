@@ -9,7 +9,7 @@
     "dev": "pnpm --filter @agent/repl dev",
     "dev:ink": "pnpm --filter @agent/ink dev",
     "dev:web": "pnpm --filter @agent/web dev",
-    "dev:api": "pnpm --filter @agent/core exec tsx src/server.ts",
+    "dev:api": "pnpm --filter @agent/core run server",
     "dev:village": "npx concurrently -n api,web -c blue,green \"pnpm dev:api\" \"pnpm dev:web\"",
     "build": "pnpm -r build"
   },

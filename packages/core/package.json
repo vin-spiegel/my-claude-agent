@@ -8,7 +8,8 @@
     "./types": "./dist/types.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "server": "tsx src/server.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
