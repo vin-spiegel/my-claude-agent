@@ -289,6 +289,13 @@ export class Agent {
 
           yield { event: 'tool-result', tool: toolName, id: toolId, result: result || '' };
         }
+      } else if (msg.type === 'assistant' && msg.message?.content) {
+        // Non-streaming assistant message (fallback)
+        const content = this.extractContent(msg);
+        if (content && !buffer) {
+          buffer = content;
+          yield { event: 'text', content };
+        }
       } else if (msg.type === 'result') {
         const resultMsg = msg as any;
         totalDuration = resultMsg.duration_ms || 0;

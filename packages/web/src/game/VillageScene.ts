@@ -24,9 +24,9 @@ const NPC_COLORS = [0x5865f2, 0xe67e22, 0x2ecc71, 0x9b59b6, 0xe91e63, 0x00bcd4, 
 export class VillageScene extends Phaser.Scene {
   private tentPos = { x: 0, y: 0 };
   private buildingPositions = new Map<string, { x: number; y: number }>();
-  private runners: Phaser.GameObjects.Arc[] = [];
+  private runners: Phaser.GameObjects.GameObject[] = [];
   private activeGlows = new Map<string, Phaser.GameObjects.Arc>();
-  private agentNpcRects = new Map<string, Phaser.GameObjects.Rectangle>();
+  private agentNpcSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private dynamicNpcs: Array<{ name: string; type: 'agent' | 'skill' }> = [];
   private availableSkills: Array<{ name: string }> = [];
   private loadedSkills = new Set<string>();
@@ -36,11 +36,24 @@ export class VillageScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // TODO: 픽셀 에셋 로드
+    this.load.spritesheet('character', '/assets/character.png', { frameWidth: 48, frameHeight: 48 });
+    this.load.spritesheet('grass-objects', '/assets/grass-objects.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.image('grass', '/assets/grass.png');
   }
 
   create(): void {
     this.cameras.main.setBackgroundColor('#2d5a27');
+
+    // Create idle animation
+    if (!this.anims.exists('idle-down')) {
+      this.anims.create({
+        key: 'idle-down',
+        frames: this.anims.generateFrameNumbers('character', { start: 0, end: 1 }),
+        frameRate: 3,
+        repeat: -1,
+      });
+    }
+
     this.layoutScene();
 
     this.scale.on('resize', () => this.layoutScene());
@@ -90,14 +103,19 @@ export class VillageScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
 
-    // 그리드
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x3d7a37, 0.3);
-    for (let x = 0; x < w; x += 32) {
-      graphics.lineBetween(x, 0, x, h);
-    }
-    for (let y = 0; y < h; y += 32) {
-      graphics.lineBetween(0, y, w, y);
+    // Grass background
+    const bg = this.add.tileSprite(w / 2, h / 2, w, h, 'grass');
+    bg.setScale(3);
+
+    // Scatter some decorations
+    const seed = 42;
+    for (let i = 0; i < 20; i++) {
+      const dx = ((seed * (i + 1) * 7 + 13) % 100) / 100 * w;
+      const dy = ((seed * (i + 1) * 11 + 37) % 100) / 100 * h;
+      const frame = [0, 1, 6, 7, 12, 13][i % 6]; // various grass-objects frames
+      const deco = this.add.sprite(dx, dy, 'grass-objects', frame);
+      deco.setScale(2);
+      deco.setAlpha(0.7);
     }
 
     const cx = w / 2;
@@ -107,22 +125,23 @@ export class VillageScene extends Phaser.Scene {
 
     this.tentPos = { x: cx, y: cy };
 
-    // 이장 텐트 (중앙) — 클릭 가능
-    const tent = this.add.rectangle(cx, cy, 64, 64, 0x8b4513);
-    tent.setStrokeStyle(2, 0xffd700);
-    tent.setInteractive({ useHandCursor: true });
+    // 이장 NPC (중앙) — 클릭 가능
+    const chief = this.add.sprite(cx, cy, 'character', 0);
+    chief.setScale(1.5);
+    chief.play('idle-down');
+    chief.setInteractive({ useHandCursor: true });
     
-    tent.on('pointerover', () => {
-      tent.setScale(1.05);
+    chief.on('pointerover', () => {
+      chief.setScale(1.6);
     });
-    tent.on('pointerout', () => {
-      tent.setScale(1);
+    chief.on('pointerout', () => {
+      chief.setScale(1.5);
     });
-    tent.on('pointerdown', () => {
+    chief.on('pointerdown', () => {
       EventBus.emit('open-chat', undefined);
     });
 
-    this.add.text(cx, cy + 40, '이장', {
+    this.add.text(cx, cy + 44, '이장', {
       fontSize: '14px',
       color: '#ffffff',
       ...font,
@@ -148,22 +167,24 @@ export class VillageScene extends Phaser.Scene {
 
       this.dynamicNpcs.forEach((npc, i) => {
         const nx = startX + i * spacing;
-        const color = NPC_COLORS[i % NPC_COLORS.length];
+        const tint = NPC_COLORS[i % NPC_COLORS.length];
 
-        const rect = this.add.rectangle(nx, ny, 36, 36, color);
-        rect.setStrokeStyle(1, 0xffaa00);
-        rect.setInteractive({ useHandCursor: true });
+        const sprite = this.add.sprite(nx, ny, 'character', 0);
+        sprite.setScale(1);
+        sprite.setTint(tint);
+        sprite.play('idle-down');
+        sprite.setInteractive({ useHandCursor: true });
 
-        rect.on('pointerover', () => rect.setScale(1.1));
-        rect.on('pointerout', () => rect.setScale(1));
-        rect.on('pointerdown', () => {
+        sprite.on('pointerover', () => sprite.setScale(1.15));
+        sprite.on('pointerout', () => sprite.setScale(1));
+        sprite.on('pointerdown', () => {
           EventBus.emit('npc-click', { name: npc.name, x: nx, y: ny });
         });
 
         this.buildingPositions.set(npc.name, { x: nx, y: ny });
-        this.agentNpcRects.set(npc.name, rect);
+        this.agentNpcSprites.set(npc.name, sprite);
 
-        this.add.text(nx, ny + 26, npc.name, {
+        this.add.text(nx, ny + 30, npc.name, {
           fontSize: '9px',
           color: '#ffcc66',
           ...font,
@@ -275,7 +296,7 @@ export class VillageScene extends Phaser.Scene {
   /** Highlight an agent NPC with glow ring + pulse */
   private highlightAgent(name: string): void {
     const pos = this.buildingPositions.get(name);
-    const rect = this.agentNpcRects.get(name);
+    const npcSprite = this.agentNpcSprites.get(name);
     if (!pos) return;
 
     // Glow ring
@@ -296,9 +317,9 @@ export class VillageScene extends Phaser.Scene {
     });
 
     // NPC pulse
-    if (rect) {
+    if (npcSprite) {
       this.tweens.add({
-        targets: rect,
+        targets: npcSprite,
         scaleX: 1.15,
         scaleY: 1.15,
         duration: 500,
@@ -320,7 +341,7 @@ export class VillageScene extends Phaser.Scene {
         onComplete: () => glow.destroy(),
       });
 
-      const rect = this.agentNpcRects.get(name);
+    const rect = this.agentNpcSprites.get(name);
       if (rect) {
         this.tweens.killTweensOf(rect);
         this.tweens.add({
@@ -356,8 +377,9 @@ export class VillageScene extends Phaser.Scene {
       }
     }
 
-    const runner = this.add.circle(this.tentPos.x, this.tentPos.y, 6, 0x00ff88);
-    runner.setStrokeStyle(1, 0xffffff);
+    const runner = this.add.sprite(this.tentPos.x, this.tentPos.y, 'character', 8);
+    runner.setScale(0.6);
+    runner.setTint(0x00ff88);
     this.runners.push(runner);
 
     this.tweens.add({
