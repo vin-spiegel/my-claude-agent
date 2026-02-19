@@ -124,7 +124,7 @@ export class Agent {
               const marker = `\n🚀 Delegating to subagent...\n`;
               yield { type: 'chunk', content: marker };
             } else {
-              const marker = `${prefix}🔧 ${toolName} `;
+              const marker = `${prefix}🔧 ${toolName}\n`;
               yield { type: 'chunk', content: marker };
             }
           }
@@ -249,11 +249,10 @@ export class Agent {
 
     if (!text) return '';
 
-    // Truncate long results for display (show first 300 chars)
-    const maxLen = 300;
+    // Truncate long results for display
+    const maxLen = 500;
     const trimmed = text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
-    // Collapse to single line for compact display
-    return trimmed.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    return trimmed.trim();
   }
 
   private formatKnownResult(obj: any): string | null {
@@ -283,8 +282,8 @@ export class Agent {
     if (obj.stdout !== undefined || obj.exitCode !== undefined) {
       const code = obj.exitCode ?? obj.exit_code ?? '?';
       const icon = code === 0 ? '✅' : '⚠️';
-      const out = (obj.stdout || '').replace(/\n/g, ' ').slice(0, 150);
-      return `${icon} exit=${code}${out ? ': ' + out + (obj.stdout?.length > 150 ? '...' : '') : ''}`;
+      const out = (obj.stdout || '').slice(0, 300);
+      return `${icon} exit=${code}${out ? ':\n' + out + (obj.stdout?.length > 300 ? '...' : '') : ''}`;
     }
 
     return null;

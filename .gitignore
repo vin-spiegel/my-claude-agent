@@ -22,5 +22,8 @@ Thumbs.db
 *.swp
 *.swo
 
+# Generated output
+.claude/slack-messages.md
+
 # TypeScript
 *.tsbuildinfo

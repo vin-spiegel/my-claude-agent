@@ -25,7 +25,11 @@ tsx .claude/skills/collecting-slack-messages/scripts/collect.ts [days]
 ```
 
 - Default: **7 days**
-- Custom: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts 14` for 14 days
+- Custom period: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts 14`
+- Since date: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts --since 2026-02-04`
+- Filter by user: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts --since 2026-02-04 --user suho`
+
+`--since` accepts any date string (YYYY-MM-DD). `--user` is case-insensitive partial match on real name.
 
 **Step 2**: Read the output file with the Read tool:
 

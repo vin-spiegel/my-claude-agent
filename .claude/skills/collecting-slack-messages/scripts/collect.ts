@@ -141,9 +141,29 @@ async function main() {
     process.exit(0);
   }
 
-  const days = parseInt(process.argv[2] || "7", 10);
-  const oldest = String(Date.now() / 1000 - days * 86400);
+  // Parse --since flag (date string) or positional days argument
+  const sinceFlagIdx = process.argv.indexOf("--since");
+  let oldest: string;
+  let days: number;
+
+  if (sinceFlagIdx !== -1 && process.argv[sinceFlagIdx + 1]) {
+    const sinceDate = new Date(process.argv[sinceFlagIdx + 1]);
+    if (isNaN(sinceDate.getTime())) {
+      console.error(`❌ Invalid date: ${process.argv[sinceFlagIdx + 1]}`);
+      process.exit(1);
+    }
+    oldest = String(sinceDate.getTime() / 1000);
+    days = Math.ceil((Date.now() - sinceDate.getTime()) / 86400000);
+  } else {
+    days = parseInt(process.argv[2] || "7", 10);
+    oldest = String(Date.now() / 1000 - days * 86400);
+  }
+
   const channels = channelIds.split(",").map((c) => c.trim()).filter(Boolean);
+
+  // Parse --user flag for filtering by user name (case-insensitive partial match)
+  const userFlagIdx = process.argv.indexOf("--user");
+  const userFilter = userFlagIdx !== -1 ? process.argv[userFlagIdx + 1]?.toLowerCase() : null;
 
   const lines: string[] = [];
   const out = (line: string) => { lines.push(line); };
@@ -153,7 +173,7 @@ async function main() {
     const messages = await fetchMessages(channelId, oldest);
 
     // Filter: real user messages only (no bot, no system subtypes)
-    const userMessages = messages.filter(
+    let userMessages = messages.filter(
       (m) => m.user && !m.bot_id && !m.subtype
     );
 
@@ -165,6 +185,18 @@ async function main() {
     // Pre-resolve all user IDs in parallel
     const uniqueUsers = [...new Set(userMessages.map((m) => m.user!))];
     await Promise.all(uniqueUsers.map(resolveUser));
+
+    // Apply user filter after name resolution
+    if (userFilter) {
+      userMessages = userMessages.filter((m) => {
+        const name = (userCache.get(m.user!) || "").toLowerCase();
+        return name.includes(userFilter);
+      });
+      if (userMessages.length === 0) {
+        out(`\n## #${channelName}\n"${userFilter}" 메시지 없음 (최근 ${days}일)\n`);
+        continue;
+      }
+    }
 
     // Sort chronologically
     userMessages.sort((a, b) => parseFloat(a.ts) - parseFloat(b.ts));
