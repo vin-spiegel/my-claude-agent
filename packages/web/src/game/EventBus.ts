@@ -17,6 +17,8 @@ export type EventBusEvents = {
   'tool-start': { tool: string };
   'tool-complete': { tool: string; result: unknown };
   'npc-click': { name: string; x: number; y: number };
+  'subagent-start': undefined;
+  'subagent-end': undefined;
 };
 
 type EventCallback<T> = (data: T) => void;

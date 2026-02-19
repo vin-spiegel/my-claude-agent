@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Markdown from 'react-markdown';
 import { EventBus } from '../game/EventBus';
 
 interface Message {
@@ -87,11 +88,21 @@ export function ChatPanel() {
               EventBus.emit('tool-start', { tool: parsed.tool });
               break;
             case 'tool-result':
-              appendToLastAssistant(`📋 ${parsed.result}\n`);
+              // Don't show raw tool results in chat — too noisy
               EventBus.emit('tool-complete', { tool: '', result: parsed.result });
               break;
+            case 'subagent':
+              EventBus.emit('subagent-start', undefined);
+              break;
+            case 'thinking':
+              // Skip thinking blocks in UI
+              break;
+            case 'progress':
+              // Skip progress updates
+              break;
             case 'done':
-              // Stream complete
+              // Dismiss all deputies when stream ends
+              EventBus.emit('subagent-end', undefined);
               break;
             case 'error':
               appendToLastAssistant(`\n❌ ${parsed.error}`);
@@ -209,6 +220,7 @@ export function ChatPanel() {
             }}
           >
             <div
+              className="chat-bubble"
               style={{
                 padding: '10px 14px',
                 borderRadius: '12px',
@@ -219,7 +231,11 @@ export function ChatPanel() {
                 wordBreak: 'break-word',
               }}
             >
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <Markdown>{msg.content}</Markdown>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
@@ -274,12 +290,56 @@ export function ChatPanel() {
 
       <style>{`
         @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .chat-bubble p { margin: 0 0 8px 0; }
+        .chat-bubble p:last-child { margin-bottom: 0; }
+        .chat-bubble h1, .chat-bubble h2, .chat-bubble h3 {
+          margin: 12px 0 6px 0;
+          color: #ffd700;
+        }
+        .chat-bubble h1 { font-size: 16px; }
+        .chat-bubble h2 { font-size: 15px; }
+        .chat-bubble h3 { font-size: 14px; }
+        .chat-bubble ul, .chat-bubble ol {
+          margin: 4px 0;
+          padding-left: 20px;
+        }
+        .chat-bubble li { margin: 2px 0; }
+        .chat-bubble code {
+          background: rgba(255,255,255,0.1);
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-family: monospace;
+          font-size: 13px;
+        }
+        .chat-bubble pre {
+          background: rgba(0,0,0,0.4);
+          padding: 8px;
+          border-radius: 6px;
+          overflow-x: auto;
+          margin: 6px 0;
+        }
+        .chat-bubble pre code {
+          background: none;
+          padding: 0;
+        }
+        .chat-bubble strong { color: #8bb4f0; }
+        .chat-bubble table {
+          border-collapse: collapse;
+          margin: 6px 0;
+          font-size: 13px;
+        }
+        .chat-bubble th, .chat-bubble td {
+          border: 1px solid #444;
+          padding: 4px 8px;
+        }
+        .chat-bubble th { background: rgba(255,255,255,0.05); }
+        .chat-bubble hr {
+          border: none;
+          border-top: 1px solid #444;
+          margin: 8px 0;
         }
       `}</style>
     </div>

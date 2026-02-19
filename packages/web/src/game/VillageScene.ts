@@ -2,12 +2,15 @@ import { EventBus } from './EventBus';
 
 // Tool name → building label mapping
 const TOOL_BUILDING_MAP: Record<string, string> = {
-  Bash: 'Vercel',
+  // 코드/파일 관련 → GitHub
   Read: 'GitHub',
   Write: 'GitHub',
   Edit: 'GitHub',
   Grep: 'GitHub',
   Glob: 'GitHub',
+  // 실행/배포 관련 → Vercel
+  Bash: 'Vercel',
+  // 커뮤니케이션/스킬 → Slack
   Skill: 'Slack',
   Task: 'Slack',
 };
@@ -22,6 +25,7 @@ export class VillageScene extends Phaser.Scene {
   private tentPos = { x: 0, y: 0 };
   private buildingPositions = new Map<string, { x: number; y: number }>();
   private runners: Phaser.GameObjects.Arc[] = [];
+  private deputies: Phaser.GameObjects.Container[] = [];
 
   constructor() {
     super({ key: 'VillageScene' });
@@ -43,9 +47,17 @@ export class VillageScene extends Phaser.Scene {
       this.dispatchRunner(buildingName);
     };
 
+    const handleSubagentStart = () => this.spawnDeputy();
+    const handleSubagentEnd = () => this.dismissDeputy();
+
     EventBus.on('tool-start', handleToolStart);
+    EventBus.on('subagent-start', handleSubagentStart);
+    EventBus.on('subagent-end', handleSubagentEnd);
+
     this.events.on('destroy', () => {
       EventBus.off('tool-start', handleToolStart);
+      EventBus.off('subagent-start', handleSubagentStart);
+      EventBus.off('subagent-end', handleSubagentEnd);
     });
   }
 
@@ -137,6 +149,66 @@ export class VillageScene extends Phaser.Scene {
       color: '#ffffff',
       ...font,
     }).setOrigin(0.5);
+  }
+
+  /** Spawn a deputy NPC next to the tent */
+  private spawnDeputy(): void {
+    const offsetX = 50 + this.deputies.length * 30;
+    const dx = this.tentPos.x + offsetX;
+    const dy = this.tentPos.y - 10;
+
+    const container = this.add.container(dx, dy + 40);
+
+    // Body — smaller tent
+    const body = this.add.rectangle(0, 0, 36, 36, 0x6b3410);
+    body.setStrokeStyle(1, 0xffaa00);
+
+    // Label
+    const label = this.add.text(0, 24, '부이장', {
+      fontSize: '10px',
+      color: '#ffaa00',
+      fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0.5);
+
+    container.add([body, label]);
+    container.setAlpha(0);
+
+    // Fade in from above
+    this.tweens.add({
+      targets: container,
+      alpha: 1,
+      y: dy,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
+
+    // Idle pulse
+    this.tweens.add({
+      targets: body,
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    this.deputies.push(container);
+  }
+
+  /** Dismiss all deputy NPCs */
+  private dismissDeputy(): void {
+    for (const deputy of this.deputies) {
+      this.tweens.add({
+        targets: deputy,
+        alpha: 0,
+        y: deputy.y - 30,
+        duration: 300,
+        ease: 'Quad.easeIn',
+        onComplete: () => deputy.destroy(),
+      });
+    }
+    this.deputies = [];
   }
 
   /** Dispatch a runner circle from tent to building, then back */
