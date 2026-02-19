@@ -25,16 +25,34 @@ If either variable is missing from all sources, the script exits gracefully with
 
 ## Usage
 
-**Step 1**: Run the collector script:
+**IMPORTANT — Script Path**: The script lives inside THIS skill's directory, NOT the current project. When running from any project, use the **absolute path** derived from this skill's base directory:
 
-```bash
-tsx .claude/skills/collecting-slack-messages/scripts/collect.ts [days]
+```
+$SKILL_DIR = <this skill's base directory (shown at top of this file)>
+Script     = $SKILL_DIR/scripts/collect.ts
 ```
 
-- Default: **7 days**
-- Custom period: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts 14`
-- Since date: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts --since 2026-02-04`
-- Filter by user: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts --since 2026-02-04 --user suho`
+The skill loader provides the base directory at the top of this file. **Always resolve it to an absolute path before running.**
+
+**Finding `tsx`**: `tsx` may not be globally installed. Find it in any project's node_modules:
+```bash
+# Try in order: global tsx → current project → known location
+tsx --version 2>/dev/null || \
+  npx tsx --version 2>/dev/null || \
+  node_modules/.bin/tsx --version 2>/dev/null
+```
+
+**Step 1**: Run the collector script (use absolute path):
+
+```bash
+tsx $SKILL_DIR/scripts/collect.ts [days]
+```
+
+Examples with absolute path:
+- Default: `tsx /c/Project/private/my-claude-agent/.claude/skills/collecting-slack-messages/scripts/collect.ts`
+- Custom period: `tsx $SKILL_DIR/scripts/collect.ts 14`
+- Since date: `tsx $SKILL_DIR/scripts/collect.ts --since 2026-02-04`
+- Filter by user: `tsx $SKILL_DIR/scripts/collect.ts --since 2026-02-04 --user suho`
 
 `--since` accepts any date string (YYYY-MM-DD). `--user` is case-insensitive partial match on real name.
 
@@ -44,7 +62,7 @@ tsx .claude/skills/collecting-slack-messages/scripts/collect.ts [days]
 Read .claude/slack-messages.md
 ```
 
-The script saves full messages to `.claude/slack-messages.md` and prints the file path. **Always use Read to get the complete data** — stdout only shows a summary.
+The script saves full messages to `.claude/slack-messages.md` (relative to cwd) and prints the file path. **Always use Read to get the complete data** — stdout only shows a summary.
 
 ## Output Format (in slack-messages.md)
 
