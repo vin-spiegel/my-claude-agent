@@ -17,8 +17,10 @@ export type EventBusEvents = {
   'tool-start': { tool: string };
   'tool-complete': { tool: string; result: unknown };
   'npc-click': { name: string; x: number; y: number };
-  'subagent-start': undefined;
+  'subagent-start': { name: string };
   'subagent-end': undefined;
+  'skill-loaded': { name: string };
+  'village-data': { agents: Array<{ name: string; description: string }>; skills: Array<{ name: string; description: string }> };
 };
 
 type EventCallback<T> = (data: T) => void;

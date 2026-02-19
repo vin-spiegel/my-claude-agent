@@ -84,28 +84,29 @@ export function ChatPanel() {
               appendToLastAssistant(parsed.content);
               break;
             case 'tool-start':
-              appendToLastAssistant(`\n🔧 ${parsed.tool}\n`);
               EventBus.emit('tool-start', { tool: parsed.tool });
               break;
             case 'tool-result':
-              // Don't show raw tool results in chat — too noisy
-              EventBus.emit('tool-complete', { tool: '', result: parsed.result });
+              EventBus.emit('tool-complete', { tool: parsed.tool, result: parsed.result });
               break;
-            case 'subagent':
-              EventBus.emit('subagent-start', undefined);
+            case 'skill-loaded':
+              EventBus.emit('skill-loaded', { name: parsed.name });
+              appendToLastAssistant(`\n⚡ 스킬 "${parsed.name}" 로드됨\n`);
+              break;
+            case 'subagent-start':
+              EventBus.emit('subagent-start', { name: parsed.name || '' });
+              break;
+            case 'subagent-end':
+              EventBus.emit('subagent-end', undefined);
               break;
             case 'thinking':
-              // Skip thinking blocks in UI
-              break;
             case 'progress':
-              // Skip progress updates
               break;
             case 'done':
-              // Dismiss all deputies when stream ends
               EventBus.emit('subagent-end', undefined);
               break;
             case 'error':
-              appendToLastAssistant(`\n❌ ${parsed.error}`);
+              appendToLastAssistant(`\n❌ ${parsed.message}`);
               break;
           }
         } catch {

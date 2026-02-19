@@ -8,10 +8,7 @@ interface TooltipData {
 }
 
 const FLAVOR_TEXT: Record<string, string> = {
-  Slack: '바쁜 중이에요... 📨',
-  GitHub: '코드 정리하는 중... 💻',
-  Gmail: '메일 확인 중... 📧',
-  Vercel: '배포 준비 중... 🚀',
+  // 동적 NPC — fallback으로 처리
 };
 
 export function NpcTooltip() {

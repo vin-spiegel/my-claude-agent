@@ -4,7 +4,10 @@ import { config } from 'dotenv';
 import path from 'path';
 import { Agent } from './agent.js';
 
-config({ path: path.resolve(process.cwd(), '../../.env') });
+// Resolve project root (server runs from packages/core)
+const projectRoot = path.resolve(process.cwd(), '../..');
+
+config({ path: path.join(projectRoot, '.env') });
 
 const PORT = parseInt(process.env.API_PORT || '3030', 10);
 
@@ -13,11 +16,11 @@ const PORT = parseInt(process.env.API_PORT || '3030', 10);
 const agent = new Agent({
   model: process.env.DEFAULT_MODEL,
   maxBudget: process.env.MAX_BUDGET_USD ? parseFloat(process.env.MAX_BUDGET_USD) : 10.0,
-  cwd: process.cwd(),
+  cwd: projectRoot,
 });
 
 await agent.init();
-console.log(`[server] Agent initialized`);
+console.log(`[server] Agent initialized (root: ${projectRoot})`);
 
 // ── SSE helpers ──
 
@@ -87,45 +90,38 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, sseHeaders());
 
     try {
-      for await (const chunk of agent.chatStream(body.message)) {
-        if (chunk.type === 'chunk') {
-          // Parse chunk content for structured events
-          const content = chunk.content;
-
-          if (content.startsWith('🔧 ')) {
-            // Tool start: "🔧 Bash\n" → extract tool name
-            const toolName = content.replace('🔧 ', '').trim();
-            sendSSE(res, 'tool-start', { tool: toolName });
-          } else if (content.startsWith('📋 ')) {
-            // Tool result
-            const result = content.replace('📋 ', '').trim();
-            sendSSE(res, 'tool-result', { result });
-          } else if (content.startsWith('🚀 ')) {
-            // Subagent delegation
-            sendSSE(res, 'subagent', { message: content.trim() });
-          } else if (content.startsWith('💭 ')) {
-            // Thinking
-            sendSSE(res, 'thinking', { content: content.trim() });
-          } else if (content.startsWith('⏳ ')) {
-            // Tool progress
-            sendSSE(res, 'progress', { message: content.trim() });
-          } else {
-            // Regular text
-            sendSSE(res, 'text', { content });
-          }
-        } else if (chunk.type === 'complete') {
-          sendSSE(res, 'done', {
-            content: chunk.content,
-            metadata: chunk.metadata,
-          });
-        }
+      for await (const evt of agent.chatEvents(body.message)) {
+        sendSSE(res, evt.event, evt);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      sendSSE(res, 'error', { error: message });
+      const errMsg = err instanceof Error ? err.message : String(err);
+      sendSSE(res, 'error', { event: 'error', message: errMsg });
     }
 
     res.end();
+    return;
+  }
+
+  // GET /api/agents — list loaded subagents
+  if (url.pathname === '/api/agents' && req.method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(JSON.stringify({ agents: agent.getSubagentInfo() }));
+    return;
+  }
+
+  // GET /api/skills — list loaded skills
+  if (url.pathname === '/api/skills' && req.method === 'GET') {
+    const skills = await agent.listSkills();
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(JSON.stringify({
+      skills: skills.map(s => ({ name: s.name, description: s.description })),
+    }));
     return;
   }
 
