@@ -1,4 +1,7 @@
 #!/usr/bin/env tsx
+/// <reference types="node" />
+import path from "path";
+import { writeFileSync } from "fs";
 /**
  * Slack Message Collector
  *
@@ -142,6 +145,9 @@ async function main() {
   const oldest = String(Date.now() / 1000 - days * 86400);
   const channels = channelIds.split(",").map((c) => c.trim()).filter(Boolean);
 
+  const lines: string[] = [];
+  const out = (line: string) => { lines.push(line); };
+
   for (const channelId of channels) {
     const channelName = await getChannelName(channelId);
     const messages = await fetchMessages(channelId, oldest);
@@ -152,7 +158,7 @@ async function main() {
     );
 
     if (userMessages.length === 0) {
-      console.log(`\n## #${channelName}\n메시지 없음 (최근 ${days}일)\n`);
+      out(`\n## #${channelName}\n메시지 없음 (최근 ${days}일)\n`);
       continue;
     }
 
@@ -178,17 +184,22 @@ async function main() {
     }
 
     // Output
-    console.log(`\n## #${channelName}`);
+    out(`\n## #${channelName}`);
 
     for (const [date, msgs] of byDate) {
-      console.log(`\n### ${date}`);
+      out(`\n### ${date}`);
       for (const { time, name, text } of msgs) {
-        // Truncate very long messages
-        const display = text.length > 200 ? text.slice(0, 200) + "..." : text;
-        console.log(`[${time}] ${name}: ${display}`);
+        out(`[${time}] ${name}: ${text}`);
       }
     }
   }
+
+  // Write to file and print path so agent can Read it
+  const content = lines.join("\n");
+  const outPath = path.resolve(process.cwd(), ".claude", "slack-messages.md");
+  writeFileSync(outPath, content, "utf-8");
+  console.log(`Slack messages saved to: ${outPath}`);
+  console.log(`Total: ${lines.length} lines, ${channels.length} channel(s), ${days} days`);
 }
 
 main().catch((err) => {

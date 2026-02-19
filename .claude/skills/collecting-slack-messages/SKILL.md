@@ -18,7 +18,7 @@ If either variable is missing, the script exits gracefully with a warning.
 
 ## Usage
 
-Run the collector script:
+**Step 1**: Run the collector script:
 
 ```bash
 tsx .claude/skills/collecting-slack-messages/scripts/collect.ts [days]
@@ -27,7 +27,15 @@ tsx .claude/skills/collecting-slack-messages/scripts/collect.ts [days]
 - Default: **7 days**
 - Custom: `tsx .claude/skills/collecting-slack-messages/scripts/collect.ts 14` for 14 days
 
-## Output Format
+**Step 2**: Read the output file with the Read tool:
+
+```
+Read .claude/slack-messages.md
+```
+
+The script saves full messages to `.claude/slack-messages.md` and prints the file path. **Always use Read to get the complete data** — stdout only shows a summary.
+
+## Output Format (in slack-messages.md)
 
 ```
 ## #channel-name
